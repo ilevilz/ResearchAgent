@@ -1,0 +1,14 @@
+# 可选增强依赖 —— 装不上不影响运行，代码会自动降级
+# 安装：pip install -r requirements-optional.txt
+
+# 1) FAISS 向量索引（生产推荐）
+#    无 wheel 时自动降级为 NumPy 精确余弦检索，接口完全一致。
+#    注意：截至 Python 3.14，faiss-cpu 尚未发布对应 wheel
+faiss-cpu>=1.8 ; python_version < "3.14"
+
+# 2) PDF 高质量解析后备（pypdf 解析失败时自动启用）
+pypdfium2>=4.30
+
+# 3) 语义 Embedding（BGE 中文向量模型，约 2GB 含 torch）
+#    pip install -r requirements-embedding.txt
+sentence-transformers>=2.7

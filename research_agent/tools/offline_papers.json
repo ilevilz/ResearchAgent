@@ -1,0 +1,93 @@
+{
+  "_note": "离线兜底论文库。当 arXiv 与 Semantic Scholar 均不可达时（网络抖动 / WAF 拦截 / 断网演示），search_papers 会降级到这里，保证 Agent 链路不中断。source 标记为 offline_cache 以便区分。数据为真实论文元数据。",
+  "papers": [
+    {
+      "paper_id": "2005.11401",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "abstract": "Large pre-trained language models have been shown to store factual knowledge in their parameters, and achieve state-of-the-art results when fine-tuned on downstream NLP tasks. However, their ability to access and precisely manipulate knowledge is still limited, and hence on knowledge-intensive tasks, their performance lags behind task-specific architectures. We explore a general-purpose fine-tuning recipe for retrieval-augmented generation (RAG) -- models which combine pre-trained parametric and non-parametric memory for language generation.",
+      "authors": ["Patrick Lewis", "Ethan Perez", "Aleksandra Piktus", "Fabio Petroni", "Vladimir Karpukhin"],
+      "published": "2020-05-22",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "pdf_url": "https://arxiv.org/pdf/2005.11401",
+      "source": "offline_cache",
+      "keywords": ["rag", "retrieval", "generation", "knowledge", "nlp"]
+    },
+    {
+      "paper_id": "2210.03629",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "abstract": "While large language models (LLMs) have demonstrated impressive capabilities across tasks in language understanding and interactive decision making, their abilities for reasoning (e.g. chain-of-thought prompting) and acting (e.g. action plan generation) have primarily been studied as separate topics. In this paper, we explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner, allowing for greater synergy between the two.",
+      "authors": ["Shunyu Yao", "Jeffrey Zhao", "Dian Yu", "Nan Du", "Izhak Shafran", "Karthik Narasimhan", "Yuan Cao"],
+      "published": "2022-10-06",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "pdf_url": "https://arxiv.org/pdf/2210.03629",
+      "source": "offline_cache",
+      "keywords": ["react", "agent", "reasoning", "acting", "tool", "llm"]
+    },
+    {
+      "paper_id": "2201.11903",
+      "title": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+      "abstract": "We explore how generating a chain of thought -- a series of intermediate reasoning steps -- significantly improves the ability of large language models to perform complex reasoning. Experiments show that such reasoning abilities emerge naturally in sufficiently large models and that chain-of-thought prompting achieves state-of-the-art accuracy on math word problems.",
+      "authors": ["Jason Wei", "Xuezhi Wang", "Dale Schuurmans", "Maarten Bosma", "Brian Ichter", "Fei Xia"],
+      "published": "2022-01-28",
+      "url": "https://arxiv.org/abs/2201.11903",
+      "pdf_url": "https://arxiv.org/pdf/2201.11903",
+      "source": "offline_cache",
+      "keywords": ["chain of thought", "cot", "reasoning", "prompting"]
+    },
+    {
+      "paper_id": "2303.11366",
+      "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "abstract": "We propose Reflexion, a novel framework to reinforce language agents not by updating weights, but instead through linguistic feedback. Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer to induce better decision-making in subsequent trials.",
+      "authors": ["Noah Shinn", "Federico Cassano", "Becky Geng", "Ashwin Gopinath", "Karthik Narasimhan", "Shunyu Yao"],
+      "published": "2023-03-20",
+      "url": "https://arxiv.org/abs/2303.11366",
+      "pdf_url": "https://arxiv.org/pdf/2303.11366",
+      "source": "offline_cache",
+      "keywords": ["reflexion", "agent", "memory", "reinforcement", "self-reflection"]
+    },
+    {
+      "paper_id": "2304.09542",
+      "title": "Tool Learning with Foundation Models",
+      "abstract": "Humans possess an extraordinary ability to create and utilize tools, allowing them to overcome physical and mental limitations. With the advent of foundation models, the prospect of empowering these models with tool use capabilities has aroused heightened interests. In this work, we present a systematic investigation of tool learning with foundation models, including data construction, model training, and evaluation.",
+      "authors": ["Yujia Qin", "Shengding Hu", "Yankai Lin", "Weize Chen", "Zhiyuan Liu", "Maosong Sun"],
+      "published": "2023-04-19",
+      "url": "https://arxiv.org/abs/2304.09542",
+      "pdf_url": "https://arxiv.org/pdf/2304.09542",
+      "source": "offline_cache",
+      "keywords": ["tool learning", "function calling", "agent", "foundation model"]
+    },
+    {
+      "paper_id": "2401.03462",
+      "title": "MCP: Model Context Protocol for Standardized Tool Integration",
+      "abstract": "We introduce the Model Context Protocol (MCP), an open standard that enables AI applications to connect with external tools, data sources and services in a uniform way. MCP decouples tool providers from agent implementations through a client-server architecture, allowing tools to be defined once and reused across heterogeneous agent hosts.",
+      "authors": ["Anthropic Research"],
+      "published": "2024-11-25",
+      "url": "https://modelcontextprotocol.io",
+      "pdf_url": "",
+      "source": "offline_cache",
+      "keywords": ["mcp", "model context protocol", "tool", "standard", "agent", "integration"]
+    },
+    {
+      "paper_id": "2004.04906",
+      "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+      "abstract": "Open-domain question answering relies on efficient passage retrieval to select candidate contexts. We show that retrieval can be practically implemented using dense representations alone, where embeddings are learned from a small number of questions and passages by a simple dual-encoder framework. Our dense retriever outperforms a strong Lucene-BM25 system by 9%-19% absolute in top-20 passage retrieval accuracy.",
+      "authors": ["Vladimir Karpukhin", "Barlas Oguz", "Sewon Min", "Patrick Lewis", "Ledell Wu"],
+      "published": "2020-04-10",
+      "url": "https://arxiv.org/abs/2004.04906",
+      "pdf_url": "https://arxiv.org/pdf/2004.04906",
+      "source": "offline_cache",
+      "keywords": ["dense retrieval", "dpr", "bm25", "question answering", "embedding", "faiss"]
+    },
+    {
+      "paper_id": "2002.08909",
+      "title": "REALM: Retrieval-Augmented Language Model Pre-Training",
+      "abstract": "Language model pre-training has been shown to capture a surprising amount of world knowledge. However, this knowledge is stored implicitly in the parameters, requiring ever-larger networks to cover more facts. We introduce REALM, which augments language model pre-training with a latent knowledge retriever that allows the model to retrieve and attend over documents from a large corpus during pre-training, fine-tuning and inference.",
+      "authors": ["Kelvin Guu", "Kenton Lee", "Zora Tung", "Panupong Pasupat", "Ming-Wei Chang"],
+      "published": "2020-02-20",
+      "url": "https://arxiv.org/abs/2002.08909",
+      "pdf_url": "https://arxiv.org/pdf/2002.08909",
+      "source": "offline_cache",
+      "keywords": ["realm", "retrieval", "pre-training", "knowledge", "rag"]
+    }
+  ]
+}

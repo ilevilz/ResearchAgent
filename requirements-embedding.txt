@@ -1,0 +1,3 @@
+# 语义 Embedding 依赖（约 2GB，含 torch）
+# 装完将 .env 中 EMBEDDING_BACKEND 设为 auto 或 sentence-transformers
+sentence-transformers>=2.7

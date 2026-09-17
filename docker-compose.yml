@@ -1,0 +1,19 @@
+services:
+  research-agent:
+    build: .
+    image: research-agent:latest
+    container_name: research-agent
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # 挂载数据目录，让索引与下载的 PDF 在容器重建后依然保留
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
