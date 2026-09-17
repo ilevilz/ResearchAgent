@@ -108,6 +108,40 @@ def test_agent_handles_unknown_tool_gracefully():
     assert "未知工具" in result.steps[0].observation
 
 
+def test_forced_convergence_works_with_real_llm_client():
+    """回归测试：强制收敛路径曾必然抛 TypeError。
+
+    `llm.chat(messages, tools=None)` 与 `_call(messages, tools=None, **overrides)`
+    的参数撞车，报 `got multiple values for keyword argument 'tools'`。
+    该路径只在步数耗尽时触发，单步任务永远走不到，所以长期未被发现——
+    而它恰恰是 Agent 的安全网。
+    """
+    from research_agent.core.llm_client import DeepSeekClient
+
+    captured: dict[str, Any] = {}
+
+    class _Completions:
+        def create(self, **payload: Any) -> Any:
+            captured.update(payload)
+            return type(
+                "R",
+                (),
+                {
+                    "choices": [type("C", (), {"message": type("M", (), {"content": "兜底回答", "tool_calls": None})()})()],
+                    "usage": type("U", (), {"prompt_tokens": 1, "completion_tokens": 1})(),
+                    "model": "stub",
+                },
+            )()
+
+    client = DeepSeekClient(api_key="sk-test")
+    client._client = type("S", (), {"chat": type("Ch", (), {"completions": _Completions()})()})()
+
+    # 正是 react_agent 收敛路径的调用方式
+    resp = client.chat([{"role": "user", "content": "x"}], tools=None)
+    assert resp.content == "兜底回答"
+    assert "tools" not in captured, "纯文本对话不应把 tools 传给模型"
+
+
 def test_memory_records_multi_turn():
     from research_agent.memory.session import SessionMemory
 

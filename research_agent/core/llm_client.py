@@ -137,7 +137,15 @@ class DeepSeekClient:
     # 对外 API
     # ------------------------------------------------------------------ #
     def chat(self, messages: list[dict[str, Any]], **overrides: Any) -> LLMResponse:
-        """纯文本对话。"""
+        """纯文本对话（不带工具）。
+
+        这里必须丢弃调用方传来的 ``tools``：``_call`` 已显式接收 ``tools``，
+        若 ``overrides`` 里还有同名键，Python 会抛
+        ``got multiple values for keyword argument 'tools'``。
+        该错误只在**步数耗尽强制收敛**时触发（Agent 的安全网），
+        单步任务永远走不到，因此极易漏测。
+        """
+        overrides.pop("tools", None)
         return self._call(messages, tools=None, **overrides)
 
     def chat_with_tools(

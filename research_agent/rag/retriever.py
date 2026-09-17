@@ -36,9 +36,13 @@ class RetrievedChunk:
     metadata: dict[str, Any] = field(default_factory=dict)
     dense_rank: int | None = None
     sparse_rank: int | None = None
+    # 融合 + 重排后的最终名次（1 起）。由 retrieve() 统一赋值：
+    # 名次是「检索结果的位置」，只有检索器知道，调用方各自推断必然出错。
+    rank: int = 0
 
     def as_dict(self) -> dict[str, Any]:
         return {
+            "rank": self.rank,
             "text": self.text,
             "score": round(self.score, 6),
             "metadata": self.metadata,
@@ -189,7 +193,12 @@ class Retriever:
         results = sorted(fused.values(), key=lambda x: -x.score)[: top_k * 2]
         if rerank:
             results = self._rerank(query, results)
-        return results[:top_k]
+        results = results[:top_k]
+
+        # 名次在最终顺序确定后才有效，统一在此赋值
+        for i, item in enumerate(results, start=1):
+            item.rank = i
+        return results
 
     def retrieve_as_dicts(self, query: str, top_k: int | None = None) -> list[dict[str, Any]]:
         return [r.as_dict() for r in self.retrieve(query, top_k)]

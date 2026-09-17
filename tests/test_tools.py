@@ -130,6 +130,57 @@ def test_arxiv_and_s2_have_dedicated_throttle_intervals():
     assert _MIN_INTERVAL["api.semanticscholar.org"] >= 1.0
 
 
+def test_download_pdf_purges_stale_empty_cache_file(tmp_path, monkeypatch):
+    """回归测试：下载中断留下的 0 字节文件会被当成有效缓存，反复毒化后续解析。"""
+    from research_agent.config import settings
+    from research_agent.tools.pdf_parser import download_pdf_impl
+
+    monkeypatch.setattr(settings, "papers_dir", tmp_path, raising=False)
+    poisoned = tmp_path / "2005.pdf"
+    poisoned.write_bytes(b"")
+
+    # 空文件必须先被清掉；随后下载失败也绝不能留下任何残file
+    with pytest.raises(Exception):
+        download_pdf_impl("https://example.invalid/2005.pdf")
+    assert not poisoned.exists(), "陈旧空文件未被清理"
+
+
+def test_parse_pdf_returns_text_from_real_pdf(tmp_path):
+    """验证 PDF 解析链路（此前从未被真实 PDF 覆盖过）。"""
+    # 文本需 >= 50 字符，否则会被 loader._meaningful() 判为「抽取文本过少」
+    content = (
+        b"BT /F1 18 Tf 72 700 Td "
+        b"(ReAct agent reasoning test for the PDF parser pipeline in ResearchAgent.) Tj ET"
+    )
+    objs = [
+        b"<</Type/Catalog/Pages 2 0 R>>",
+        b"<</Type/Pages/Kids[3 0 R]/Count 1>>",
+        b"<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R"
+        b"/Resources<</Font<</F1 5 0 R>>>>>>",
+        b"<</Length %d>>stream\n" % len(content) + content + b"\nendstream",
+        b"<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>",
+    ]
+    out = bytearray(b"%PDF-1.4\n")
+    offsets = []
+    for i, obj in enumerate(objs, 1):
+        offsets.append(len(out))
+        out += b"%d 0 obj" % i + obj + b"endobj\n"
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1)
+    for off in offsets:
+        out += b"%010d 00000 n \n" % off
+    out += b"trailer<</Size %d/Root 1 0 R>>\nstartxref\n%d\n%%%%EOF" % (len(objs) + 1, xref)
+
+    pdf = tmp_path / "mini.pdf"
+    pdf.write_bytes(bytes(out))
+
+    from research_agent.rag.loader import parse_pdf
+
+    doc = parse_pdf(str(pdf))
+    assert len(doc.pages) == 1
+    assert "ReAct agent reasoning" in doc.pages[0].text
+
+
 def test_offline_fallback_returns_papers():
     """断网兜底必须能返回结果，且如实标记来源。"""
     from research_agent.tools.paper_search import search_papers_impl

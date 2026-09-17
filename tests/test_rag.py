@@ -130,6 +130,42 @@ def test_knowledge_base_end_to_end(tmp_path):
     assert kb2.search("非参数化记忆", top_k=1)[0].metadata["title"] == "RAG 论文"
 
 
+def test_search_results_expose_rank():
+    """回归测试：as_dict() 曾缺 rank 字段，导致 search_knowledge_base 与 CLI search 必崩。"""
+    from research_agent.rag.retriever import RetrievedChunk
+
+    chunk = RetrievedChunk(text="t", score=0.5, metadata={"title": "T"})
+    assert chunk.rank == 0  # 未参与检索前无名次
+    assert "rank" in chunk.as_dict()
+
+
+def test_knowledge_base_search_assigns_sequential_1based_ranks(tmp_path):
+    kb = KnowledgeBase(index_path=tmp_path / "kb")
+    for i in range(4):
+        kb.add_text_entry(f"第{i}篇文档讲的是检索增强生成的不同方面，编号{i}。", metadata={"title": f"论文{i}"})
+
+    results = kb.search_as_dicts("检索增强生成", top_k=3)
+    assert [r["rank"] for r in results] == [1, 2, 3]
+
+
+def test_search_kb_impl_returns_ranked_results(tmp_path, monkeypatch):
+    """回归测试：search_kb_impl 曾因 r['rank'] 抛 KeyError。"""
+    from research_agent.rag import knowledge_base as kb_mod
+    from research_agent.tools.kb_tools import search_kb_impl
+
+    kb = KnowledgeBase(index_path=tmp_path / "kb")
+    kb.add_text_entry("ReAct 交替进行推理与行动。", metadata={"title": "ReAct 论文"})
+    kb.add_text_entry("RAG 结合参数化与非参数化记忆。", metadata={"title": "RAG 论文"})
+    monkeypatch.setattr(kb_mod, "_default_kb", kb, raising=False)
+    monkeypatch.setattr(kb_mod, "get_knowledge_base", lambda: kb)
+
+    out = search_kb_impl("ReAct 推理行动", top_k=2)
+    assert out["num_results"] == 2
+    assert [r["rank"] for r in out["results"]] == [1, 2]
+    assert out["results"][0]["title"] == "ReAct 论文"
+    assert out["context"]
+
+
 def test_build_context_includes_source_headers():
     from research_agent.rag.retriever import RetrievedChunk
 

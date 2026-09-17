@@ -39,20 +39,35 @@ def download_pdf_impl(url: str, filename: str | None = None) -> dict[str, Any]:
     if target.exists() and target.stat().st_size > 0:
         return {"path": str(target), "size_bytes": target.stat().st_size, "cached": True}
 
-    with httpx.Client(timeout=_TIMEOUT, follow_redirects=True) as client:
-        with client.stream("GET", url) as resp:
-            resp.raise_for_status()
-            content_type = resp.headers.get("content-type", "")
-            if "pdf" not in content_type.lower() and not url.lower().endswith(".pdf"):
-                logger.warning("Content-Type 非 PDF：%s", content_type)
-            total = 0
-            with target.open("wb") as fh:
-                for chunk in resp.iter_bytes(chunk_size=65536):
-                    total += len(chunk)
-                    if total > _MAX_PDF_BYTES:
-                        fh.close()
-                        target.unlink(missing_ok=True)
-                        raise ToolError(f"PDF 超过 {_MAX_PDF_BYTES // 1024 // 1024}MB 限制")
+    # 0 字节文件永远不是有效缓存（历史 bug 会在下载中断时留下），
+    # 必须清掉：否则它会一直占着文件名，让后续调用反复踩同一个坑。
+    if target.exists():
+        logger.warning("清理无效的空 PDF 缓存：%s", target.name)
+        target.unlink(missing_ok=True)
+
+    # 先下到 .part 临时文件，成功后再原子重命名。
+    # 直接写 target 会在下载中断时留下 0 字节文件，而它看起来就像一份已缓存
+    # 的 PDF，后续 parse_pdf 只会报「Cannot read an empty file」，掩盖真实原因。
+    tmp = target.with_suffix(target.suffix + ".part")
+    try:
+        with httpx.Client(timeout=_TIMEOUT, follow_redirects=True) as client:
+            with client.stream("GET", url) as resp:
+                resp.raise_for_status()
+                content_type = resp.headers.get("content-type", "")
+                if "pdf" not in content_type.lower() and not url.lower().endswith(".pdf"):
+                    logger.warning("Content-Type 非 PDF：%s", content_type)
+                total = 0
+                with tmp.open("wb") as fh:
+                    for chunk in resp.iter_bytes(chunk_size=65536):
+                        total += len(chunk)
+                        if total > _MAX_PDF_BYTES:
+                            raise ToolError(f"PDF 超过 {_MAX_PDF_BYTES // 1024 // 1024}MB 限制")
+
+        if tmp.stat().st_size == 0:
+            raise ToolError(f"下载内容为空：{url}")
+        tmp.replace(target)
+    finally:
+        tmp.unlink(missing_ok=True)
 
     return {"path": str(target), "size_bytes": target.stat().st_size, "cached": False}
 

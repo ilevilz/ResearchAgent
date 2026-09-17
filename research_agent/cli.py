@@ -133,7 +133,8 @@ def cmd_search(args: argparse.Namespace) -> int:
     print(f"\n检索到 {len(results)} 条结果：\n")
     for item in results:
         meta = item["metadata"]
-        print(f"[{item['rank'] + 1}] score={item['score']:.4f} | {meta.get('title', 'unknown')}")
+        # rank 由 Retriever 统一赋值为 1 起的名次，此处不再 +1
+        print(f"[{item['rank']}] score={item['score']:.4f} | {meta.get('title', 'unknown')}")
         print(f"    {truncate(item['text'], 200)}\n")
     return 0
 
