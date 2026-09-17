@@ -35,6 +35,9 @@ class CaseScore:
     expected_tools: list[str] = field(default_factory=list)
     actual_tools: list[str] = field(default_factory=list)
     # 检索
+    # retrieval_evaluated 用于区分「检索了但没命中」与「本就无需检索」：
+    # 只看 retrieval_hit 会把两者混为一谈，从而把检索准确率算低。
+    retrieval_evaluated: bool = False
     retrieval_hit: bool = False
     retrieval_mrr: float = 0.0
     # 答案
@@ -62,6 +65,7 @@ class CaseScore:
             "tool_f1": round(self.tool_f1, 4),
             "expected_tools": self.expected_tools,
             "actual_tools": self.actual_tools,
+            "retrieval_evaluated": self.retrieval_evaluated,
             "retrieval_hit": self.retrieval_hit,
             "retrieval_mrr": round(self.retrieval_mrr, 4),
             "keyword_hit_rate": round(self.keyword_hit_rate, 4),
@@ -122,6 +126,7 @@ def score_case(case: Any, result: Any, retrieved: Sequence[dict[str, Any]] | Non
 
     # ---- 检索准确率 ----
     if case.expected_sources and retrieved:
+        score.retrieval_evaluated = True
         score.retrieval_hit, score.retrieval_mrr = _retrieval_score(case.expected_sources, retrieved)
 
     # ---- 答案关键词命中 ----
@@ -255,7 +260,9 @@ def aggregate(scores: Iterable[CaseScore]) -> EvalReport:
         return EvalReport()
 
     latencies = [c.latency_ms for c in cases]
-    retrieval_cases = [c for c in cases if c.expected_sources]
+    # 只统计真正做过检索的用例。这里曾误用 CaseScore 上不存在的
+    # expected_sources 字段，导致整轮评测跑完后在聚合阶段崩溃、报告全丢。
+    retrieval_cases = [c for c in cases if c.retrieval_evaluated]
 
     by_category: dict[str, dict[str, Any]] = {}
     for case in cases:

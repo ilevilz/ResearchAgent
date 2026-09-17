@@ -99,6 +99,21 @@ def test_extract_metrics_regex_fallback():
     assert 93.2 in values and 94.6 in values
 
 
+def test_extraction_prompt_can_be_formatted():
+    """回归测试：提示词里的 JSON 示例花括号未转义，.format() 必抛 KeyError。
+
+    后果是 LLM 抽取路径 100% 失效并静默降级为正则，
+    表面看功能正常，实际「LLM 抽取」从未生效过。
+    """
+    from research_agent.tools.experiment import _EXTRACTION_PROMPT
+
+    rendered = _EXTRACTION_PROMPT.format(text="论文正文占位")
+    assert "论文正文占位" in rendered
+    assert "{text}" not in rendered
+    # JSON 示例必须原样保留花括号，供模型照抄格式
+    assert '{"model": "BERT"' in rendered
+
+
 def test_compare_experiments():
     records = [
         {"model": "BERT", "dataset": "SQuAD", "metric": "f1", "value": 93.2},

@@ -29,7 +29,7 @@ _EXTRACTION_PROMPT = """你是科研论文实验信息的抽取专家。请从�
 4. 严格输出 JSON 数组，不要输出任何解释文字。
 
 输出格式示例：
-[{"model": "BERT", "dataset": "SQuAD", "metric": "F1", "value": 93.2, "unit": "%", "context": "..."}]
+[{{"model": "BERT", "dataset": "SQuAD", "metric": "F1", "value": 93.2, "unit": "%", "context": "..."}}]
 
 论文文本：
 ---
@@ -155,8 +155,10 @@ def extract_metrics_impl(text: str, source: str = "", use_llm: bool = True) -> d
                 metrics, extractor = normalized, "llm"
             else:
                 logger.warning("LLM 抽取结果为空，转用正则兜底")
-        except (LLMError, Exception) as exc:  # noqa: BLE001
-            logger.warning("LLM 抽取失败（%s），转用正则兜底", exc)
+        except Exception as exc:  # noqa: BLE001 - 兜底是设计的一部分，但不能静默
+            # 用 exc_info 记录堆栈：此前提示词里的花括号未转义导致 .format() 必抛
+            # KeyError，被这里吞成一行 warning，LLM 抽取路径 100% 失效却无人察觉。
+            logger.warning("LLM 抽取失败（%s: %s），转用正则兜底", type(exc).__name__, exc, exc_info=True)
 
     if not metrics:
         metrics = _normalize(_regex_extract(text, source), source, "regex")
