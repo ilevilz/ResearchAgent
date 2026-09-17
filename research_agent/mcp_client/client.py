@@ -140,7 +140,13 @@ class MCPClient:
         async def _list() -> list[dict[str, Any]]:
             result = await self._session.list_tools()
             return [
-                {"name": t.name, "description": t.description or "", "inputSchema": t.inputSchema}
+                {
+                    "name": t.name,
+                    "description": t.description or "",
+                    # mcp 2.x 的 Tool 是 pydantic 模型，字段名从 inputSchema 改为 input_schema；
+                    # 这里同时兼容两个版本，避免升级 SDK 时静默失效。
+                    "inputSchema": getattr(t, "inputSchema", None) or getattr(t, "input_schema", None) or {},
+                }
                 for t in result.tools
             ]
 

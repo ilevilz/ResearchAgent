@@ -213,7 +213,7 @@ ResearchAgent/
 │   └── cli.py
 ├── web/index.html      # Web Demo（零构建，单文件）
 ├── scripts/build_kb.py # 知识库构建脚本
-├── tests/              # 40 个单元测试
+├── tests/              # 50 个单元测试
 ├── docs/architecture.md
 ├── Dockerfile / docker-compose.yml
 └── Makefile
@@ -258,10 +258,10 @@ python -m research_agent eval
 ## 测试
 
 ```bash
-make test        # 40 个单元测试，不依赖网络与 LLM
+make test        # 50 个单元测试，不依赖网络与 LLM
 ```
 
-覆盖：工具注册与 Schema 有效性、延迟埋点、RAG 全链路（切分/Embedding/索引持久化/BM25/RRF）、ReAct 循环（正常收敛 / 步数耗尽强制收敛 / 工具异常不崩溃）、API 契约与错误码。
+覆盖：工具注册与 Schema 有效性、延迟埋点、检索限速、RAG 全链路（切分/Embedding/索引持久化/BM25/RRF）、ReAct 循环（正常收敛 / 步数耗尽强制收敛 / 工具异常不崩溃）、MCP 双传输一致性、API 契约与错误码。
 
 ---
 
