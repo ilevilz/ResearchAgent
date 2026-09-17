@@ -6,11 +6,21 @@
 """
 from __future__ import annotations
 
+import pytest
+
 from research_agent.eval.metrics import CaseScore, aggregate
 
 
 def _score(**kw) -> CaseScore:
-    base = {"case_id": "c1", "category": "search", "success": True, "tool_f1": 1.0, "latency_ms": 100.0}
+    base = {
+        "case_id": "c1",
+        "category": "search",
+        "success": True,
+        "tool_f1": 1.0,
+        "latency_ms": 100.0,
+        # 默认给一个非空期望集，否则该用例不计入工具 F1 均值
+        "expected_tools": ["search_papers"],
+    }
     base.update(kw)
     return CaseScore(**base)
 
@@ -47,6 +57,40 @@ def test_aggregate_empty_input():
     report = aggregate([])
     assert report.num_cases == 0
     assert report.to_markdown()
+
+
+def test_retrieval_score_reads_source_from_metadata():
+    """回归测试：source/title 在 metadata 里，只在顶层找会导致命中率恒为 0。"""
+    from research_agent.eval.metrics import _retrieval_score
+
+    retrieved = [
+        {"rank": 1, "text": "……", "score": 0.9, "metadata": {"title": "RAG 论文", "source": "arxiv"}},
+        {"rank": 2, "text": "……", "score": 0.5, "metadata": {"title": "别的", "source": "arxiv:1234"}},
+    ]
+    hit, mrr = _retrieval_score(["arxiv"], retrieved)
+    assert hit is True
+    assert mrr == 1.0
+
+    hit2, mrr2 = _retrieval_score(["arxiv:1234"], retrieved)
+    assert hit2 is True and mrr2 == 0.5, "应命中第 2 条并给出 1/2 的 MRR"
+
+
+def test_retrieval_score_misses_when_nothing_matches():
+    from research_agent.eval.metrics import _retrieval_score
+
+    hit, mrr = _retrieval_score(["nonexistent"], [{"rank": 1, "metadata": {"source": "arxiv"}}])
+    assert hit is False and mrr == 0.0
+
+
+def test_tool_f1_excludes_cases_without_expectations():
+    """无期望工具集的用例（robustness）不应计入工具 F1 均值。"""
+    report = aggregate([
+        _score(case_id="a", tool_f1=1.0, expected_tools=["search_papers"], actual_tools=["search_papers"]),
+        _score(case_id="b", tool_f1=0.67, expected_tools=["extract_metrics"], actual_tools=["extract_metrics"]),
+        _score(case_id="robust", tool_f1=0.0, expected_tools=[], actual_tools=["search_papers"]),
+    ])
+    assert report.tool_calling_accuracy == pytest.approx(0.835, abs=0.01), "空期望用例被错误计入"
+    assert report.num_cases == 3, "用例总数仍应包含全部用例"
 
 
 def test_aggregate_computes_four_dimensions():

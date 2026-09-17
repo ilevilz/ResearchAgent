@@ -104,8 +104,16 @@ def _retrieval_score(expected_sources: Sequence[str], retrieved: Sequence[dict[s
         return False, 0.0
     needles = [s.lower() for s in expected_sources]
     for rank, item in enumerate(retrieved, start=1):
+        # 检索结果的实际结构是 {rank, text, score, metadata:{title, source, ...}}，
+        # source/title 在 metadata 里而非顶层。此前只在顶层找，永远取到空串，
+        # 导致检索准确率恒为 0——是**度量写错**，不是检索不行。
+        fields = dict(item)
+        meta = item.get("metadata")
+        if isinstance(meta, dict):
+            for key, value in meta.items():
+                fields.setdefault(key, value)
         haystack = " ".join(
-            str(item.get(k, "")) for k in ("title", "source", "text", "paper_title")
+            str(fields.get(k, "")) for k in ("title", "source", "text", "paper_title")
         ).lower()
         if any(n in haystack for n in needles):
             return True, 1.0 / rank
@@ -263,6 +271,10 @@ def aggregate(scores: Iterable[CaseScore]) -> EvalReport:
     # 只统计真正做过检索的用例。这里曾误用 CaseScore 上不存在的
     # expected_sources 字段，导致整轮评测跑完后在聚合阶段崩溃、报告全丢。
     retrieval_cases = [c for c in cases if c.retrieval_evaluated]
+    # 同理：没有期望工具集的用例（如 robustness）不计入工具 F1 均值。
+    # 「未指定期望」不等于「不该调用任何工具」——面对不存在的论文，
+    # Agent 去检索一次恰恰是正确行为，按 F1=0 计入会错误地拉低整体指标。
+    tool_cases = [c for c in cases if c.expected_tools]
 
     by_category: dict[str, dict[str, Any]] = {}
     for case in cases:
@@ -279,9 +291,9 @@ def aggregate(scores: Iterable[CaseScore]) -> EvalReport:
     return EvalReport(
         num_cases=len(cases),
         task_success_rate=sum(c.success for c in cases) / len(cases),
-        tool_calling_accuracy=mean([c.tool_f1 for c in cases]),
-        tool_precision=mean([c.tool_precision for c in cases]),
-        tool_recall=mean([c.tool_recall for c in cases]),
+        tool_calling_accuracy=mean([c.tool_f1 for c in tool_cases]) if tool_cases else 0.0,
+        tool_precision=mean([c.tool_precision for c in tool_cases]) if tool_cases else 0.0,
+        tool_recall=mean([c.tool_recall for c in tool_cases]) if tool_cases else 0.0,
         retrieval_accuracy=(sum(c.retrieval_hit for c in retrieval_cases) / len(retrieval_cases)) if retrieval_cases else 0.0,
         retrieval_mrr=mean([c.retrieval_mrr for c in retrieval_cases]) if retrieval_cases else 0.0,
         latency_mean_ms=mean(latencies),
