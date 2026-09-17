@@ -83,6 +83,22 @@ def test_agent_forces_convergence_at_max_steps():
     assert len(result.steps) == 3
 
 
+def test_direct_answer_without_tools_is_success():
+    """回归测试：不调工具的直接回答曾被判为「未执行任何工具调用」失败。
+
+    用户打招呼或问「你能做什么」时，直接回答就是正确行为；
+    把它算作失败会误导用户，也会污染评测的任务成功率。
+    """
+    llm = StubLLM([LLMResponse(content="你好，我可以帮你检索论文、解析 PDF。", latency_ms=5)])
+    agent = ReActAgent(registry=_registry(), llm=llm, max_steps=3, verbose=False)
+    result = agent.run("你好", reset_memory=True)
+
+    assert result.success is True
+    assert result.error == ""
+    assert result.steps == []
+    assert result.answer
+
+
 def test_agent_survives_tool_exception():
     llm = StubLLM([
         LLMResponse(content="调用会抛错的工具", tool_calls=[_tool_call("c1", "explode", "{}")], latency_ms=5),

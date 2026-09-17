@@ -282,11 +282,12 @@ class ReActAgent:
         result.latency_ms = round((time.perf_counter() - started) * 1000, 2)
         self.memory.add_assistant(final_answer)
 
-        if not result.steps and not result.error:
+        # 未调用工具 ≠ 失败：用户打招呼或询问能力范围时，直接回答就是正确行为，
+        # 之前一律判为「未执行任何工具调用」的失败，既误导用户也会污染评测成功率。
+        # 真正的失败（LLMError 等）已在上面各分支置位，这里只兜「没产出任何回答」。
+        if not final_answer.strip():
             result.success = False
-            result.error = "未执行任何工具调用"
-        elif any(not s.ok for s in result.steps) and not final_answer:
-            result.success = False
+            result.error = result.error or "未产出回答"
 
         return result
 
