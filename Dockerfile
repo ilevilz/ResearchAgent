@@ -24,10 +24,13 @@ COPY pyproject.toml README.md ./
 COPY research_agent/ ./research_agent/
 COPY scripts/ ./scripts/
 COPY web/ ./web/
-COPY eval/ ./eval/ 2>/dev/null || true
 
 # 以非 root 用户运行
-RUN useradd -m -u 10001 agent && mkdir -p /app/data && chown -R agent:agent /app
+# 评测输出目录必须在这里建：eval/ 只装 gitignore 掉的产物，全新 clone 时并不存在，
+# 既不能 COPY（源不存在会导致构建失败），也不需要 COPY（runner 会自动建目录）。
+RUN useradd -m -u 10001 agent \
+ && mkdir -p /app/data /app/eval/results \
+ && chown -R agent:agent /app
 USER agent
 
 EXPOSE 8000

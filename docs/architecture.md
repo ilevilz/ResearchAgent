@@ -142,7 +142,7 @@ MCP 传输层支持两种模式：`stdio`（独立进程，标准 MCP 用法）�
 
 ## 5. Agent Evaluation：四维指标
 
-评测集是 12 条用例，覆盖 6 个类别：`search`(3) / `rag`(2) / `experiment`(2) / `analysis`(2) / `multi_step`(2) / `robustness`(2)。
+评测集是 13 条用例，覆盖 6 个类别：`search`(3) / `rag`(2) / `experiment`(2) / `analysis`(2) / `multi_step`(2) / `robustness`(2)。
 
 | 维度 | 定义 | 实现要点 |
 | --- | --- | --- |

@@ -160,5 +160,5 @@ $PY -m research_agent chat       # 交互式多轮
 $PY -m research_agent mcp        # MCP Server
 $PY -m research_agent eval       # 评测
 $PY -m research_agent tools      # 工具清单
-$PY -m pytest -q                 # 67 个单测
+$PY -m pytest -q                 # 68 个单测（67 通过 + 1 按设计跳过）
 ```
